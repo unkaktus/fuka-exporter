@@ -1,0 +1,11 @@
+version: '3'
+
+tasks:
+  install-deps:
+      - mamba install --yes -c conda-forge fftw gsl blas
+
+  build:
+    cmds:
+      - g++ -fPIC -fopenmp -Wall -Wno-comment -I${CONDA_PREFIX}/include -I${HOME_KADATH}/include -c -o fuka_exporter.o fuka_exporter.cc -lgsl -lblas -lfftw3 -lboost
+      - g++ -shared -o libfuka_exporter.so fuka_exporter.o $HOME/fuka/lib/libkadath.a -static-libstdc++
+      - rm fuka_exporter.o
