@@ -38,8 +38,8 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
   }
   case BBH:
   {
-    binary_info.mass1 = bconfig(MADM, BCO1);
-    binary_info.mass2 = bconfig(MADM, BCO2);
+    binary_info.mass1 = bconfig(MCH, BCO1);
+    binary_info.mass2 = bconfig(MCH, BCO2);
 
     std::string space_filename = bconfig.space_filename();
     FILE *space_file = fopen(space_filename.c_str(), "r");
@@ -53,7 +53,7 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
   case BHNS:
   {
     binary_info.mass1 = bconfig(MADM, BCO1);
-    binary_info.mass2 = bconfig(MADM, BCO2);
+    binary_info.mass2 = bconfig(MCH, BCO2);
 
     std::string space_filename = bconfig.space_filename();
     FILE *space_file = fopen(space_filename.c_str(), "r");
