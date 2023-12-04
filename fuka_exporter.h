@@ -58,8 +58,8 @@ extern "C"
   } FUKAInterpolateRequest;
 
   Fields interpolate_FUKA_ID(FUKAInterpolateRequest *req);
+  Fields allocate_fields(int n_points);
 }
-Fields allocate_fields(int n_points);
 
 // Vacuum
 enum vacuum_quantities
