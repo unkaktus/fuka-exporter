@@ -1,0 +1,40 @@
+# boa recipe for fuka-exporter
+# Ivan Markin, 2023
+#
+# Requires exported path to Kadath/FUKA
+# $ export HOME_KADATH=$HOME/fuka/
+
+context:
+  version: 1.0.1
+package:
+  name: "fuka-exporter"
+  version: '{{ version }}'
+
+source:
+  path: .
+
+requirements:
+  build:
+    - compilers
+    - gsl
+    - fftw
+    - boost
+    - boost-cpp
+    # - scalapack
+    - blas
+  run:
+    - gsl
+    - fftw
+    - boost
+    - boost-cpp
+    # - scalapack # ScaLAPACK requires MPI, and thus will mess up the mixed installations
+    - blas
+
+build:
+  script_env:
+    HOME_KADATH: "{{ environ['HOME_KADATH'] }}"
+  script:
+    - g++ -fPIC -fopenmp -std=c++17 -I${CONDA_PREFIX}/include -I${HOME_KADATH}/include -c -o fuka_exporter.o fuka_exporter.cc -lgsl -lblas -lfftw3 -lboost
+    - g++ -shared -o libfuka_exporter.so fuka_exporter.o $HOME_KADATH/lib/libkadath.a -static-libgcc -static-libstdc++
+    - rm fuka_exporter.o
+    - mv libfuka_exporter.so ${PREFIX}/lib/
