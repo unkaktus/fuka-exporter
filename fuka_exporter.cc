@@ -19,6 +19,7 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
 {
   kadath_config_boost<BIN_INFO> bconfig(info_filename);
   BinaryInfo binary_info;
+  double com = bconfig(COM);
 
   switch (binary_type)
   {
@@ -32,8 +33,8 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
 
     Space_bin_ns space(space_file);
     Index center_pos(space.get_domain(space.NS1)->get_nbr_points());
-    binary_info.position_x1 = space.get_domain(space.NS1)->get_cart(1)(center_pos);
-    binary_info.position_x2 = space.get_domain(space.NS2)->get_cart(1)(center_pos);
+    binary_info.position_x1 = com + space.get_domain(space.NS1)->get_cart(1)(center_pos);
+    binary_info.position_x2 = com + space.get_domain(space.NS2)->get_cart(1)(center_pos);
     break;
   }
   case BBH:
@@ -46,8 +47,8 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
 
     Space_bin_bh space(space_file);
     Index center_pos(space.get_domain(space.BH1)->get_nbr_points());
-    binary_info.position_x1 = space.get_domain(space.BH1)->get_cart(1)(center_pos);
-    binary_info.position_x2 = space.get_domain(space.BH2)->get_cart(1)(center_pos);
+    binary_info.position_x1 = com + space.get_domain(space.BH1)->get_cart(1)(center_pos);
+    binary_info.position_x2 = com + space.get_domain(space.BH2)->get_cart(1)(center_pos);
     break;
   }
   case BHNS:
@@ -60,8 +61,8 @@ BinaryInfo read_binary_info(BinaryType binary_type, char *info_filename)
 
     Space_bhns space(space_file);
     Index center_pos(space.get_domain(space.NS)->get_nbr_points());
-    binary_info.position_x1 = space.get_domain(space.NS)->get_cart(1)(center_pos);
-    binary_info.position_x2 = space.get_domain(space.BH)->get_cart(1)(center_pos);
+    binary_info.position_x1 = com + space.get_domain(space.NS)->get_cart(1)(center_pos);
+    binary_info.position_x2 = com + space.get_domain(space.BH)->get_cart(1)(center_pos);
     break;
   }
   }
