@@ -4,6 +4,7 @@
 #include <array>
 #include <type_traits>
 #include <iostream>
+#include <omp.h>
 
 #include "bin_ns.hpp"
 #include "bin_bh.hpp"
@@ -147,8 +148,39 @@ void free_fields(Fields *fields)
   free(fields->v_z);
 }
 
+void copy_fields(Fields *dst_fields, Fields *src_fields, int offset, int size)
+{
+  memcpy(dst_fields->alpha + offset, src_fields->alpha, size);
+
+  memcpy(dst_fields->beta_x + offset, src_fields->beta_x, size);
+  memcpy(dst_fields->beta_y + offset, src_fields->beta_y, size);
+  memcpy(dst_fields->beta_z + offset, src_fields->beta_z, size);
+
+  memcpy(dst_fields->gamma_xx + offset, src_fields->gamma_xx, size);
+  memcpy(dst_fields->gamma_xy + offset, src_fields->gamma_xy, size);
+  memcpy(dst_fields->gamma_xz + offset, src_fields->gamma_xz, size);
+  memcpy(dst_fields->gamma_yy + offset, src_fields->gamma_yy, size);
+  memcpy(dst_fields->gamma_yz + offset, src_fields->gamma_yz, size);
+  memcpy(dst_fields->gamma_zz + offset, src_fields->gamma_zz, size);
+
+  memcpy(dst_fields->K_xx + offset, src_fields->K_xx, size);
+  memcpy(dst_fields->K_xy + offset, src_fields->K_xy, size);
+  memcpy(dst_fields->K_xz + offset, src_fields->K_xz, size);
+  memcpy(dst_fields->K_yy + offset, src_fields->K_yy, size);
+  memcpy(dst_fields->K_yz + offset, src_fields->K_yz, size);
+  memcpy(dst_fields->K_zz + offset, src_fields->K_zz, size);
+
+
+  memcpy(dst_fields->rho + offset, src_fields->rho, size);
+  memcpy(dst_fields->epsilon + offset, src_fields->epsilon, size);
+  memcpy(dst_fields->pressure + offset, src_fields->pressure, size);
+  memcpy(dst_fields->v_x + offset, src_fields->v_x, size);
+  memcpy(dst_fields->v_y + offset, src_fields->v_y, size);
+  memcpy(dst_fields->v_z + offset, src_fields->v_z, size);
+}
+
 Fields
-interpolate_FUKA_ID(FUKAInterpolateRequest *req)
+__interpolate_FUKA_ID(FUKAInterpolateRequest *req)
 {
   Grid *grid = req->grid;
   // In the case with no matter, the exported array is shorter,
@@ -241,5 +273,45 @@ interpolate_FUKA_ID(FUKAInterpolateRequest *req)
     copy_vector_to_array(fields.v_z, exported_matter[VELZ]);
   }
 
+  return fields;
+}
+
+Fields
+interpolate_FUKA_ID(FUKAInterpolateRequest *req)
+{
+  // omp_set_num_threads(4);
+  int n_chunks = omp_get_max_threads();
+  Grid *grid = req->grid;
+
+  Fields fields = allocate_fields(grid->n_points);
+
+  #pragma omp parallel for
+  for (int chunk = 0; chunk < n_chunks; chunk++)
+  {
+    int chunk_size = grid->n_points / n_chunks;
+    int offset = chunk * chunk_size;
+    if (chunk == n_chunks - 1)
+    {
+      chunk_size += grid->n_points % n_chunks;
+    }
+    if (chunk != 1 && chunk != 2) {
+      continue;
+    }
+    #pragma omp critical
+    std::cout << "chunk: " << chunk << "/" << n_chunks << ", size: " << chunk_size << ", offset: " << offset << std::endl;
+    // Copy request
+    FUKAInterpolateRequest chunk_request = *req;
+    Grid chunk_grid = {
+      x : &(grid->x[offset]),
+      y : &(grid->y[offset]),
+      z : &(grid->z[offset]),
+      n_points : chunk_size,
+    };
+
+    chunk_request.grid = &chunk_grid;
+    Fields chunk_fields = __interpolate_FUKA_ID(&chunk_request);
+    #pragma omp critical
+    copy_fields(&fields, &chunk_fields, offset, chunk_size);
+  }
   return fields;
 }

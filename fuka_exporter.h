@@ -57,6 +57,7 @@ extern "C"
     double relative_dr_spacing;
   } FUKAInterpolateRequest;
 
+  Fields __interpolate_FUKA_ID(FUKAInterpolateRequest *req);
   Fields interpolate_FUKA_ID(FUKAInterpolateRequest *req);
   Fields allocate_fields(int n_points);
 }
