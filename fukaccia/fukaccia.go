@@ -145,7 +145,12 @@ func ReadVariable(r *bufio.Reader) (string, []float64, error) {
 	return varname, v, nil
 }
 
-func ReadLevelFile(filename string) (map[string][]float64, error) {
+type LevelFile struct {
+	m    map[string][]float64
+	keys []string
+}
+
+func ReadLevelFile(filename string) (*LevelFile, error) {
 	file, err := os.Open(filename)
 	defer file.Close()
 	if err != nil {
@@ -153,7 +158,9 @@ func ReadLevelFile(filename string) (map[string][]float64, error) {
 	}
 	r := bufio.NewReader(file)
 
-	m := map[string][]float64{}
+	lf := &LevelFile{
+		m: map[string][]float64{},
+	}
 
 	for {
 		_, err = r.ReadString('\n')
@@ -167,15 +174,17 @@ func ReadLevelFile(filename string) (map[string][]float64, error) {
 		if err != nil {
 			return nil, err
 		}
-		m[varname] = value
+
+		lf.m[varname] = value
+		lf.keys = append(lf.keys, varname)
 	}
 
-	return m, nil
+	return lf, nil
 }
 
 var headerString = "$BEGIN_variables:\n"
 
-func WriteLevelFile(filename string, m map[string][]float64) error {
+func WriteLevelFile(filename string, lf *LevelFile) error {
 	file, err := os.Create(filename)
 	defer file.Close()
 	if err != nil {
@@ -188,7 +197,9 @@ func WriteLevelFile(filename string, m map[string][]float64) error {
 	if err != nil {
 		return fmt.Errorf("write header: %w", err)
 	}
-	for varname, values := range m {
+
+	for _, varname := range lf.keys {
+		values := lf.m[varname]
 		_, err = fmt.Fprintf(w, "$variable = %s : length = %d\n", varname, len(values))
 		if err != nil {
 			return fmt.Errorf("write header for variable %s: %w", varname, err)
@@ -196,6 +207,10 @@ func WriteLevelFile(filename string, m map[string][]float64) error {
 		err = binary.Write(w, binary.LittleEndian, values)
 		if err != nil {
 			return fmt.Errorf("write values for variable %s: %w", varname, err)
+		}
+		_, err = w.WriteString("\n")
+		if err != nil {
+			return fmt.Errorf("write trailing newline: %w", err)
 		}
 	}
 
