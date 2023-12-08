@@ -1,0 +1,7 @@
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - go build -v -o fukaccia
+      - go build -v -o libfukaccia.so -buildmode=c-shared
